@@ -120,9 +120,7 @@ def main():
         sys.exit()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    # current_timestamp = int(time.time())
-    current_timestamp = int(time.time()) - 30 * 24 * 60 * 60
-    # current_timestamp = '2022-01-01'
+    current_timestamp = int(time.time())
     latest_error_type = None
 
     while True:
