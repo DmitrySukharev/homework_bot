@@ -3,28 +3,21 @@ import logging
 import os
 import sys
 import time
+from http import HTTPStatus
 
 import requests
 import telegram
 from dotenv import load_dotenv
 
 import exceptions as exc
+from settings import ENDPOINT, HOMEWORK_STATUSES, RETRY_TIME
 
 load_dotenv()
 
-PRACTICUM_TOKEN = os.getenv('HW_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TG_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('MY_TG_ID')
-
-RETRY_TIME = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+PRACTICUM_TOKEN = os.getenv('HW_TOKEN')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-
-HOMEWORK_STATUSES = {
-    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
-    'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
-}
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -37,26 +30,25 @@ logger.addHandler(handler)
 def send_message(bot, message):
     """Отправка сообщения в чат, определяемый в переменных окружения."""
     try:
+        logger.debug('Отправляем сообщение в Телеграм...')
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except Exception:
-        logger.error('Не могу отправить сообщение в Телеграм!')
+    except telegram.error.TelegramError as err:
+        logger.error(f'Не могу отправить сообщение в Телеграм! Ошибка: {err}')
     else:
         logger.info(f'Бот отправил сообщение "{message}"')
 
 
 def get_api_answer(current_timestamp):
-    """Получение ответа API и проверка.
-
-    Стандартные исключения модуля requests (например, ConnectionError)
-    должны обрабатываться в вызывающем коде.
-    Ошибка преобразования JSON обрабатывается внутри функции
-    и поднимает исключение с более понятным описанием проблемы.
-    """
+    """Получение ответа API и проверка."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    # response.raise_for_status()       # не проходит pytest :(
-    if response.status_code != 200:
+    try:
+        logger.debug('Запрашиваем Yandex Homework API...')
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    except Exception as error:
+        error_msg = (f'Эндпоинт {ENDPOINT} недоступен. Ошибка: {error}')
+        raise exc.APINotAvailableError(error_msg)
+    if response.status_code != HTTPStatus.OK:
         error_msg = (f'Эндпоинт {ENDPOINT} недоступен. '
                      f'Код ответа API: {response.status_code}')
         raise exc.InvalidHTTPResponseError(error_msg)

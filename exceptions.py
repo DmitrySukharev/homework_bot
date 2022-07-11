@@ -1,3 +1,9 @@
+class APINotAvailableError(Exception):
+    """Для ошибок соединения с API (ConnectionError,  Timeout, и т.д.)."""
+
+    pass
+
+
 class InvalidHTTPResponseError(Exception):
     """Для ответов API со статусом, отличным от успешного (200)."""
 
