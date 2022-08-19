@@ -16,6 +16,7 @@ load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv('TG_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('MY_TG_ID')
+TEAM22_TG_ID = os.getenv('TEAM22_TG_ID')
 PRACTICUM_TOKEN = os.getenv('HW_TOKEN')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -36,6 +37,17 @@ def send_message(bot, message):
         logger.error(f'Не могу отправить сообщение в Телеграм! Ошибка: {err}')
     else:
         logger.info(f'Бот отправил сообщение "{message}"')
+
+
+def send_message_to_team22(bot, message):
+    """Отправка сообщения в чат группы, определяемый в переменных окружения."""
+    try:
+        logger.debug('Отправляем сообщение в ТГ Группу 22...')
+        bot.send_message(TEAM22_TG_ID, message)
+    except telegram.error.TelegramError as err:
+        logger.error(f'Не могу отправить сообщение в Группу 22! Ошибка: {err}')
+    else:
+        logger.info(f'Бот отправил сообщение в ТГ Группу 22"{message}"')
 
 
 def get_api_answer(current_timestamp):
@@ -115,6 +127,9 @@ def main():
     current_timestamp = int(time.time())
     latest_error_type = None
 
+    send_message(bot, 'Привет, я проснулся!')
+    send_message_to_team22(bot, 'Привет, я проснулся!')
+
     while True:
         try:
             response = get_api_answer(current_timestamp)
@@ -123,6 +138,7 @@ def main():
                 for homework in homeworks:
                     message = parse_status(homework)
                     send_message(bot, message)
+                    send_message_to_team22(bot, message)
             else:
                 logger.debug('No news - good news!')
             current_timestamp = response.get('current_date') or time.time()
