@@ -128,7 +128,6 @@ def main():
     latest_error_type = None
 
     send_message(bot, 'Привет, я проснулся!')
-    send_message_to_team22(bot, 'Привет, я проснулся!')
 
     while True:
         try:
